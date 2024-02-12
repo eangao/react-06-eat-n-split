@@ -23,16 +23,31 @@ const initialFriends = [
 
 export default function App() {
   const [showAddFriend, setShowAddFriend] = useState(false);
+  const [friends, setFriends] = useState(initialFriends);
 
   function handelShowAddFriend() {
     setShowAddFriend((show) => !show);
   }
 
+  function handleAddFriend(friend) {
+    // So don't do that, don't mutate original arrays
+    // because React is all about immutability.
+    // That's also the reason why we are not allowed
+    // to mutate props, remember that?
+    // So always creating new arrays here.
+    // And the way we do that for adding a new element
+    // to an array is by creating a brand new one like this,
+    // spreading all the current elements
+    // and then adding the new one to the end like this,
+    setFriends((friends) => [...friends, friend]);
+    setShowAddFriend(false);
+  }
+
   return (
     <div className="app">
       <div className="sidebar">
-        <FriendsList />
-        {showAddFriend && <FormAddFriend />}
+        <FriendsList friends={friends} />
+        {showAddFriend && <FormAddFriend onAddFriend={handleAddFriend} />}
         <Button onClick={handelShowAddFriend}>
           {showAddFriend ? "Close" : "Add friend"}
         </Button>
@@ -51,8 +66,7 @@ function Button({ children, onClick }) {
   );
 }
 
-function FriendsList() {
-  const friends = initialFriends;
+function FriendsList({ friends }) {
   return (
     <ul>
       {friends.map((friend) => (
@@ -84,14 +98,52 @@ function Friend({ friend }) {
   );
 }
 
-function FormAddFriend() {
-  return (
-    <form className="form-add-friend">
-      <label>Friend name</label>
-      <input type="text" />
+function FormAddFriend({ onAddFriend }) {
+  const [name, setName] = useState("");
+  const [image, setImage] = useState("https://i.pravatar.cc/48");
 
-      <label>Image URL</label>
-      <input type="text" />
+  function handleSubmit(e) {
+    e.preventDefault();
+
+    if (!name || !image) return;
+
+    //       And let's create the ID using the built-in browser
+    // crypto.randomUUID.
+    // And so this is a very good way of generating
+    // random IDs right in the browser.
+    // So this is not an external packages,
+    // but it won't work in older browsers.
+    const id = crypto.randomUUID();
+
+    const newFriend = {
+      id,
+      name,
+      image: `${image}?=&{id}`,
+      balance: 0,
+    };
+
+    onAddFriend(newFriend);
+
+    setName("");
+    setImage("https://i.pravatar.cc/48");
+  }
+
+  return (
+    <form className="form-add-friend" onSubmit={handleSubmit}>
+      <label>🧍🏼Friend name</label>
+      <input
+        type="text"
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+        required
+      />
+
+      <label>🖼Image URL</label>
+      <input
+        type="text"
+        value={image}
+        onChange={(e) => setImage(e.target.value)}
+      />
 
       <Button>Add</Button>
     </form>
@@ -109,7 +161,7 @@ function FormSplitBill() {
       <label>🧘🏼‍♀️ Your expense</label>
       <input type="text" />
 
-      <label>🧘🏼‍♀️🧍🏼‍♂️ X expense</label>
+      <label>🧍🏼🧍🏼‍♂️ X expense</label>
       <input type="text" disabled />
 
       <label>🤑 Who is paying the bill?</label>
